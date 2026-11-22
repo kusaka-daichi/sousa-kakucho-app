@@ -106,6 +106,7 @@ namespace SousaKaizen
         [DllImport("user32.dll")] public static extern bool GetWindowPlacement(IntPtr hwnd, ref WINDOWPLACEMENT wp);
         [DllImport("user32.dll")] public static extern bool SetWindowPlacement(IntPtr hwnd, ref WINDOWPLACEMENT wp);
         [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr hwnd, IntPtr after, int x, int y, int cx, int cy, int flags);
+        [DllImport("user32.dll")] public static extern bool AllowSetForegroundWindow(int pid);
         [DllImport("user32.dll")] public static extern IntPtr BeginDeferWindowPos(int n);
         [DllImport("user32.dll")] public static extern IntPtr DeferWindowPos(IntPtr h, IntPtr hwnd, IntPtr after, int x, int y, int cx, int cy, int flags);
         [DllImport("user32.dll")] public static extern bool EndDeferWindowPos(IntPtr h);
@@ -364,7 +365,8 @@ namespace SousaKaizen
                     try
                     {
                         EventWaitHandle ev = EventWaitHandle.OpenExisting("Local\\SousaKaizenApp_v1_open");
-                        ev.Set();
+                        try { W.AllowSetForegroundWindow(-1); } catch { }   // 動いている方が画面を手前に出せるようにする
+                        if (open) ev.Set();
                     }
                     catch { }
                     return;
@@ -555,7 +557,23 @@ namespace SousaKaizen
                 if (Settings == null || Settings.IsDisposed) Settings = new SettingsForm();
                 Settings.Show();
                 if (Settings.WindowState == FormWindowState.Minimized) Settings.WindowState = FormWindowState.Normal;
+                // どの画面にも見えていなければ、メインの画面の真ん中へ
+                bool seen = false;
+                foreach (Screen sc in Screen.AllScreens)
+                {
+                    Rectangle r = Rectangle.Intersect(sc.WorkingArea, Settings.Bounds);
+                    if (r.Width >= 120 && r.Height >= 80) { seen = true; break; }
+                }
+                if (!seen)
+                {
+                    Rectangle wa = Screen.PrimaryScreen.WorkingArea;
+                    Settings.Location = new Point(wa.Left + Math.Max(0, (wa.Width - Settings.Width) / 2), wa.Top + Math.Max(0, (wa.Height - Settings.Height) / 2));
+                }
+                // ほかのウィンドウの後ろに隠れないように、いったん一番手前にしてから戻す
+                Settings.TopMost = true;
+                Settings.TopMost = false;
                 Settings.Activate();
+                Program.Log("アプリ画面を開きました（" + Settings.Bounds + (seen ? "" : "・画面の外にあったので真ん中へ") + "）");
             }
             catch (Exception e)
             {
