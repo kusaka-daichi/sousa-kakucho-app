@@ -2154,7 +2154,7 @@ document.getElementById(""save"").addEventListener(""click"",async function(){
 
     // ================================================================
     //  インターネット（GitHub）からの自動更新
-    //  ・起動して1分後と、そのあと6時間ごとに、GitHub に新しい版（リリース）が出ていないかを見る
+    //  ・起動して1分後と、そのあと6時間ごとに、GitHub の「配る用の版」（stable）が新しくなっていないかを見る
     //  ・新しい版があれば、その版のファイルを取ってきて、組み立てられるのを確かめてから入れ替える
     //    （入れ替えると、上の Updater が気づいて新しい版で起動し直す）
     //  ・9_AI作業用 に「開発用.txt」がある場所（作っている人のパソコン）では、勝手に更新しない
@@ -2162,6 +2162,7 @@ document.getElementById(""save"").addEventListener(""click"",async function(){
     public static class Online
     {
         const string Repo = "kusaka-daichi/sousa-kakucho-app";
+        const string Branch = "stable";      // 配る用の版。作業中の版（main）は配られない
         static readonly string[] Files = new string[] { "app.html", "app.ico", "app.ps1", "version.txt", "app.cs" };   // app.cs は最後
         static System.Windows.Forms.Timer timer;
         static bool busy;
@@ -2212,6 +2213,8 @@ document.getElementById(""save"").addEventListener(""click"",async function(){
             return wc;
         }
 
+        static string Raw(string f) { return "https://raw.githubusercontent.com/" + Repo + "/" + Branch + "/app/" + f; }
+
         static Version V(string s)
         {
             Version v;
@@ -2221,12 +2224,10 @@ document.getElementById(""save"").addEventListener(""click"",async function(){
 
         static void Work(bool onlyCheck)
         {
-            string json;
+            string tag;
             using (WebClient wc = Client())
-                json = wc.DownloadString("https://api.github.com/repos/" + Repo + "/releases/latest");
-            Match m = Regex.Match(json, "\"tag_name\"\\s*:\\s*\"([^\"]+)\"");
-            if (!m.Success) throw new Exception("最新版の番号が読めませんでした");
-            string tag = m.Groups[1].Value;
+                tag = wc.DownloadString(Raw("version.txt") + "?t=" + DateTime.UtcNow.Ticks).Trim();
+            if (!Regex.IsMatch(tag, "^[0-9]+(\\.[0-9]+){1,3}$")) throw new Exception("最新版の番号が読めませんでした");
             Version latest = V(tag), mine = V(Program.Version);
             if (onlyCheck)
             {
@@ -2241,7 +2242,8 @@ document.getElementById(""save"").addEventListener(""click"",async function(){
             Directory.CreateDirectory(tmp);
             using (WebClient wc = Client())
                 foreach (string f in Files)
-                    wc.DownloadFile("https://raw.githubusercontent.com/" + Repo + "/" + tag + "/app/" + f, Path.Combine(tmp, f));
+                    wc.DownloadFile(Raw(f) + "?t=" + DateTime.UtcNow.Ticks, Path.Combine(tmp, f));
+            if (V(File.ReadAllText(Path.Combine(tmp, "version.txt"))) != latest) { Program.Log("更新の途中で版が変わったので、次の機会にします"); return; }
             string err = Updater.TryCompile(Path.Combine(tmp, "app.cs"));
             if (err != null) { Program.Log("新しい版（" + tag + "）を組み立てられないので更新しませんでした:\r\n" + err); return; }
 
