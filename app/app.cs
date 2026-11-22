@@ -1324,8 +1324,8 @@ namespace SousaKaizen
     public static class Manual
     {
         public static bool Rec;
-        static string dir;
-        class Step { public string file, pre, kind, where; }
+        static DateTime started;
+        class Step { public byte[] png; public string pre, kind, where; }
         class Tok { public string t, s; public int n; }
         class Part { public string t, s, kind; public int i; }
         class Grab { public Bitmap bmp; public string where; }
@@ -1346,11 +1346,7 @@ namespace SousaKaizen
         {
             if (!Rec)
             {
-                string bas = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "自動マニュアル作成", DateTime.Now.ToString("yyyy-MM-dd_HHmm"));
-                dir = bas;
-                int n = 2;
-                while (Directory.Exists(dir)) dir = bas + "_" + (n++);
-                Directory.CreateDirectory(dir);
+                started = DateTime.Now;
                 steps = new List<Step>(); tok = new List<Tok>(); imeComp = false; page = null;
                 Rec = true;
                 badge = new Badge();
@@ -1375,7 +1371,6 @@ namespace SousaKaizen
             badge = null;
             if (steps.Count == 0)
             {
-                try { Directory.Delete(dir); } catch { }
                 Notice.Show("記録した手順がないので終了しました");
                 return;
             }
@@ -1849,13 +1844,47 @@ namespace SousaKaizen
         static void Store(Grab g, string kind, string pre)
         {
             if (g == null) return;
-            string file = (steps.Count + 1).ToString("000") + ".png";
-            try { g.bmp.Save(Path.Combine(dir, file), ImageFormat.Png); }
+            byte[] png;
+            try
+            {
+                using (MemoryStream ms = new MemoryStream()) { g.bmp.Save(ms, ImageFormat.Png); png = ms.ToArray(); }
+            }
             catch { g.bmp.Dispose(); return; }
             g.bmp.Dispose();
-            Step s = new Step(); s.file = file; s.pre = pre; s.kind = kind; s.where = g.where;
+            Step s = new Step(); s.png = png; s.pre = pre; s.kind = kind; s.where = g.where;
             steps.Add(s);
             if (badge != null) badge.SetCount(steps.Count);
+        }
+
+        // 手順書の名前：はじめの画面と終わりの画面の名前から作る（例「GitHub → 操作性改善アプリ」）
+        static string AutoName()
+        {
+            string a = "", b = "";
+            foreach (Step s in steps) { string w = ShortWhere(s.where); if (w == "") continue; if (a == "") a = w; b = w; }
+            string name = a == "" ? "操作の手順" : (b == a ? a + " の手順" : a + " → " + b);
+            foreach (char c in Path.GetInvalidFileNameChars()) name = name.Replace(c.ToString(), "");
+            return name.Trim();
+        }
+
+        // ウィンドウ名を短くする（「ページ名 - Google Chrome」→「ページ名」、長すぎれば切る）
+        static string ShortWhere(string w)
+        {
+            if (string.IsNullOrEmpty(w)) return "";
+            w = w.Replace("\r", " ").Replace("\n", " ").Trim();
+            int k = w.LastIndexOf(" - ");
+            if (k > 0) w = w.Substring(0, k).Trim();
+            k = w.IndexOf(" - ");
+            if (k > 0) w = w.Substring(0, k).Trim();
+            if (w == "Program Manager") return "デスクトップ";
+            // 後ろのかっこ書き（[…]・（…）など）は外す
+            while (true)
+            {
+                string w2 = Regex.Replace(w, @"\s*[\[［(（【][^\]］)）】]*[\]］)）】]?\s*$", "");
+                if (w2 == w || w2 == "") break;
+                w = w2;
+            }
+            if (w.Length > 20) w = w.Substring(0, 20) + "…";
+            return w;
         }
 
         static string Esc(string s)
@@ -1875,10 +1904,19 @@ namespace SousaKaizen
                 sb.Append("<span class=\"auto\"><span class=\"act\">" + Esc(act) + "</span>" + where + "</span>");
                 sb.Append("<button class=\"del\" title=\"この手順を消す\">×</button></div>");
                 sb.Append("<div class=\"desc\" contenteditable=\"true\"></div>");
-                sb.Append("<img src=\"data:image/png;base64," + Convert.ToBase64String(File.ReadAllBytes(Path.Combine(dir, s.file))) + "\"></section>\n");
+                sb.Append("<img src=\"data:image/png;base64," + Convert.ToBase64String(s.png) + "\"></section>\n");
             }
-            string html = ManualTemplate.Html.Replace("{{DATE}}", DateTime.Now.ToString("yyyy年M月d日")).Replace("{{STEPS}}", sb.ToString());
-            string path = Path.Combine(dir, "手順書.html");
+            // 名前は自動で付ける：はじめの画面 → 終わりの画面（同じなら1つ）
+            string name = AutoName();
+            string html = ManualTemplate.Html.Replace("{{DATE}}", started.ToString("yyyy年M月d日")).Replace("{{STEPS}}", sb.ToString())
+                .Replace("<title>手順書</title>", "<title>" + Esc(name) + "</title>")
+                .Replace("<h1 contenteditable=\"true\"></h1>", "<h1 contenteditable=\"true\">" + Esc(name) + "</h1>");
+            string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "自動マニュアル作成");
+            Directory.CreateDirectory(folder);
+            string bas = Path.Combine(folder, started.ToString("yyyy-MM-dd") + " " + name);
+            string path = bas + ".html";
+            int n = 2;
+            while (File.Exists(path)) path = bas + "（" + (n++) + "）.html";
             File.WriteAllText(path, html, new UTF8Encoding(true));
             return path;
         }

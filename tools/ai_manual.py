@@ -3,6 +3,7 @@
 
 使い方:
   python3 ai_manual.py 手順.json 出力フォルダ [app.cs のパス]
+  → 出力フォルダに「yyyy-MM-dd 題名.html」を1つだけ作る（画像は中に入れるので別ファイルは作らない）
 
 手順.json の形:
   {"title": "手順書の題名",
@@ -50,9 +51,9 @@ def main():
     for i, s in enumerate(spec['steps'], 1):
         img = Image.open(s['image']).convert('RGB')
         draw_marks(img, s.get('marks') or [])
-        name = '%03d.png' % i
-        img.save(os.path.join(out, name), 'PNG', optimize=True)
-        b64 = base64.b64encode(open(os.path.join(out, name), 'rb').read()).decode()
+        buf = io.BytesIO()
+        img.save(buf, 'PNG', optimize=True)
+        b64 = base64.b64encode(buf.getvalue()).decode()
         where = ('<span class="where">（%s）</span>' % html.escape(s['where'])) if s.get('where') else ''
         parts.append('<section class="step"><div class="head"><span class="no"></span>'
                      '<span class="auto"><span class="act">%s</span>%s</span>'
@@ -67,7 +68,11 @@ def main():
     if title:
         t = t.replace('<h1 contenteditable="true"></h1>', '<h1 contenteditable="true">%s</h1>' % html.escape(title), 1)
         t = t.replace('<title>手順書</title>', '<title>%s</title>' % html.escape(title), 1)
-    p = os.path.join(out, '手順書.html')
+    name = re.sub(r'[\\/:*?"<>|]', '', title or '操作の手順').strip()
+    bas = os.path.join(out, '%04d-%02d-%02d %s' % (now.year, now.month, now.day, name))
+    p, n = bas + '.html', 2
+    while os.path.exists(p):
+        p = bas + '（%d）.html' % n; n += 1
     open(p, 'w', encoding='utf-8-sig', newline='\r\n').write(t)
     print(p)
 
