@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>操作性拡張アプリ</title>
+<style>
+html, body { margin: 0; padding: 0; }
+body { background: #f2f2f7; color: #1c1c1e; font-family: "Yu Gothic UI", "Meiryo UI", "Meiryo", sans-serif; font-size: 14px; line-height: 1.6; overflow-x: hidden; -ms-user-select: none; user-select: none; cursor: default; }
+.wrap { padding: 18px 18px 14px; }
+h1 { margin: 0; font-size: 22px; font-weight: bold; letter-spacing: .02em; }
+.sub { margin: 2px 0 14px; color: #6e6e73; font-size: 13px; }
+
+.list { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+.item { border-top: 1px solid #e5e5ea; }
+.item:first-child { border-top: 0; }
+.row { display: flex; align-items: center; padding: 12px 14px 12px 16px; }
+.main { flex: 1 1 auto; min-width: 0; cursor: pointer; padding-right: 12px; }
+.name { font-size: 15.5px; font-weight: bold; }
+.desc { color: #6e6e73; font-size: 12.5px; }
+.more { color: #007aff; font-size: 12px; }
+.item.open .more { color: #8e8e93; }
+
+.sw { position: relative; flex: 0 0 auto; width: 51px; height: 31px; border-radius: 16px; background: #e9e9eb; border: 1px solid #d8d8dc; cursor: pointer; transition: background-color .25s ease, border-color .25s ease; outline: none; padding: 0; }
+.sw .knob { position: absolute; top: 1px; left: 1px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,.25); transition: transform .25s cubic-bezier(.3,1.4,.5,1); }
+.sw.on { background: #34c759; border-color: #34c759; }
+.sw.on .knob { transform: translateX(20px); }
+.noanim .sw, .noanim .sw .knob { transition: none; }
+
+.demo { display: none; padding: 0 16px 14px; }
+.item.open .demo { display: block; }
+.stage { position: relative; width: 456px; height: 200px; margin: 0 auto; background: #fbfbfd; border: 1px solid #e5e5ea; border-radius: 10px; overflow: hidden; }
+.cap { margin: 8px 2px 0; font-size: 13px; }
+.cap b { color: #1c1c1e; }
+
+.mon { position: absolute; background: #2c2c2e; border-radius: 6px; padding: 5px; }
+.scr { position: absolute; left: 5px; top: 5px; right: 5px; bottom: 5px; background: #d6e6f5; border-radius: 2px; overflow: hidden; }
+.mlabel { position: absolute; font-size: 11px; color: #6e6e73; text-align: center; }
+.win { position: absolute; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,.25); color: #fff; font-size: 11px; font-weight: bold; overflow: hidden; }
+.win .bar { height: 12px; background: rgba(0,0,0,.18); }
+.win .t { padding: 3px 6px; }
+.blue { background: #3478f6; }
+.green { background: #30a14e; }
+.gray { background: #8e8e93; }
+.orange { background: #ff9500; }
+.key { position: absolute; min-width: 44px; height: 26px; padding: 0 8px; line-height: 24px; text-align: center; font-size: 12px; font-weight: bold; background: #fff; color: #1c1c1e; border: 1px solid #c7c7cc; border-bottom-width: 3px; border-radius: 6px; }
+.klabel { position: absolute; font-size: 11px; color: #6e6e73; }
+.cursor { position: absolute; width: 18px; height: 24px; }
+.ring { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border: 3px solid #ff3b30; border-radius: 50%; opacity: 0; }
+.icon { position: absolute; width: 46px; text-align: center; font-size: 10px; color: #1c1c1e; border-radius: 4px; }
+.icon i { display: block; width: 24px; height: 28px; margin: 2px auto 1px; background: #fff; border: 1px solid #b0b0b5; border-radius: 2px; }
+.icon i.pdf { background: #ff3b30; border-color: #ff3b30; }
+.toast { position: absolute; background: rgba(28,28,30,.86); color: #fff; font-size: 11px; padding: 3px 9px; border-radius: 6px; opacity: 0; white-space: nowrap; }
+.folder { position: absolute; width: 70px; height: 50px; }
+.folder .tab { position: absolute; left: 0; top: 0; width: 28px; height: 9px; background: #f5c242; border-radius: 3px 3px 0 0; }
+.folder .body { position: absolute; left: 0; top: 7px; width: 70px; height: 43px; background: #ffd35c; border-radius: 3px; }
+.folder .fl { position: absolute; left: 0; top: 54px; width: 70px; text-align: center; font-size: 11px; color: #1c1c1e; }
+.flash { position: absolute; background: #fff; opacity: 0; }
+.thumb { position: absolute; background: #3478f6; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.3); opacity: 0; }
+.badge { position: absolute; background: #ff3b30; color: #fff; font-size: 11px; font-weight: bold; padding: 1px 7px; border-radius: 9px; opacity: 0; }
+.btn { position: absolute; width: 56px; height: 22px; line-height: 20px; text-align: center; background: #fff; color: #1c1c1e; border: 1px solid #c7c7cc; border-radius: 4px; font-size: 11px; font-weight: normal; }
+.mark { position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px; border: 3px solid #ff3b30; border-radius: 50%; opacity: 0; }
+.mark span { position: absolute; right: -10px; top: -10px; width: 16px; height: 16px; line-height: 16px; background: #ff3b30; color: #fff; font-size: 10px; font-weight: bold; text-align: center; border-radius: 50%; }
+.doc { position: absolute; background: #fff; border: 1px solid #c7c7cc; border-radius: 4px; box-shadow: 0 3px 10px rgba(0,0,0,.18); opacity: 0; padding: 6px; }
+.doc .dt { font-size: 11px; font-weight: bold; margin-bottom: 4px; }
+.doc .ln { height: 4px; background: #d1d1d6; border-radius: 2px; margin: 4px 0; }
+.doc .pic { height: 20px; background: #d6e6f5; border: 1px solid #b0c4de; margin: 4px 0; position: relative; }
+.doc .pic b { position: absolute; left: 10px; top: 4px; width: 10px; height: 10px; border: 2px solid #ff3b30; border-radius: 50%; }
+
+.seg { position: relative; height: 40px; margin: 12px 0 14px; border-bottom: 2px solid #c7c7cc; }
+.segbtn { position: absolute; bottom: -2px; height: 36px; line-height: 34px; padding: 0 18px 0 14px; font-size: 14px; font-weight: bold; color: #6e6e73; background: #e5e5ea; border: 1px solid #c7c7cc; border-bottom: 2px solid #c7c7cc; border-radius: 10px 10px 0 0; cursor: pointer; white-space: nowrap; }
+.segbtn:hover { color: #1c1c1e; background: #ececf0; }
+.segbtn.sel { color: #007aff; background: #fff; border-color: #c7c7cc; border-top: 3px solid #007aff; border-bottom: 2px solid #fff; height: 38px; line-height: 34px; }
+.segbtn svg { vertical-align: middle; margin: -3px 6px 0 0; }
+.segbtn.t1 { left: 0; }
+.segbtn.t2 { left: 128px; }
+
+.board { position: relative; width: 484px; height: 362px; background: #fff; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,.06); overflow: hidden; }
+.k { position: absolute; height: 27px; line-height: 27px; text-align: center; font-size: 9.5px; color: #3a3a3c; background: #f2f2f7; border: 1px solid #d1d1d6; border-bottom-width: 2px; border-radius: 4px; overflow: hidden; white-space: nowrap; }
+.k.fn { height: 21px; line-height: 21px; }
+.k.hot { color: #fff; font-weight: bold; border-color: rgba(0,0,0,.25); }
+.call { position: absolute; background: #fff; border: 2px solid #c7c7cc; border-radius: 8px; padding: 4px 8px 5px; opacity: 0; transition: opacity .25s ease; }
+.call.show { opacity: 1; }
+.call .ct { font-size: 12.5px; font-weight: bold; line-height: 1.4; }
+.call .ch { font-size: 11.5px; color: #3a3a3c; line-height: 1.4; }
+.lines { position: absolute; left: 0; top: 0; }
+.ver { margin: 14px 4px 0; font-size: 11px; color: #aeaeb2; text-align: right; }
+.empty { position: absolute; left: 20px; right: 20px; top: 286px; text-align: center; color: #8e8e93; font-size: 13px; }
+
+.play.d-swap .w1 { animation: swapA 7s ease-in-out infinite; }
+.play.d-swap .w2 { animation: swapB 7s ease-in-out infinite; }
+.play.d-swap .key { animation: key2x 7s linear infinite; }
+@keyframes swapA { 0%, 24% { left: 38px; } 36%, 72% { left: 268px; } 84%, 100% { left: 38px; } }
+@keyframes swapB { 0%, 24% { left: 268px; } 36%, 72% { left: 38px; } 84%, 100% { left: 268px; } }
+@keyframes key2x {
+  0%, 9% { background: #fff; color: #1c1c1e; transform: translateY(0); }
+  10%, 13% { background: #007aff; color: #fff; transform: translateY(2px); }
+  14%, 15% { background: #fff; color: #1c1c1e; transform: translateY(0); }
+  16%, 19% { background: #007aff; color: #fff; transform: translateY(2px); }
+  20%, 59% { background: #fff; color: #1c1c1e; transform: translateY(0); }
+  60%, 63% { background: #007aff; color: #fff; transform: translateY(2px); }
+  64%, 65% { background: #fff; color: #1c1c1e; transform: translateY(0); }
+  66%, 69% { background: #007aff; color: #fff; transform: translateY(2px); }
+  70%, 100% { background: #fff; color: #1c1c1e; transform: translateY(0); }
+}
+
+.play.d-shot .key { animation: key1x 6s linear infinite; }
+.play.d-shot .flash { animation: flash 6s linear infinite; }
+.play.d-shot .thumb { animation: fly 6s ease-in infinite; }
+.play.d-shot .toast { animation: toast 6s linear infinite; }
+@keyframes key1x {
+  0%, 17% { background: #fff; color: #1c1c1e; transform: translateY(0); }
+  18%, 22% { background: #007aff; color: #fff; transform: translateY(2px); }
+  23%, 100% { background: #fff; color: #1c1c1e; transform: translateY(0); }
+}
+@keyframes flash { 0%, 22% { opacity: 0; } 24% { opacity: .95; } 32%, 100% { opacity: 0; } }
+@keyframes fly {
+  0%, 30% { opacity: 0; left: 108px; top: 58px; width: 146px; height: 86px; }
+  31% { opacity: 1; left: 108px; top: 58px; width: 146px; height: 86px; }
+  52% { opacity: 1; left: 368px; top: 92px; width: 34px; height: 20px; }
+  56%, 100% { opacity: 0; left: 368px; top: 92px; width: 34px; height: 20px; }
+}
+@keyframes toast { 0%, 54% { opacity: 0; } 58%, 88% { opacity: 1; } 92%, 100% { opacity: 0; } }
+
+.play.d-peek .front { animation: peekFront 7s linear infinite; }
+.play.d-peek .back { animation: peekBack 7s linear infinite; }
+.play.d-peek .key { animation: keyHold 7s linear infinite; }
+.play.d-peek .cursor { animation: peekCursor 7s ease-in-out infinite; }
+.play.d-peek .ring { animation: peekRing 7s linear infinite; }
+.play.d-peek .icon.hit { animation: peekIcon 7s linear infinite; }
+@keyframes peekFront { 0%, 16% { opacity: 1; } 20%, 74% { opacity: .2; } 78%, 100% { opacity: 1; } }
+@keyframes peekBack { 0%, 16% { opacity: 1; } 20%, 74% { opacity: 0; } 78%, 100% { opacity: 1; } }
+@keyframes keyHold {
+  0%, 15% { background: #fff; color: #1c1c1e; transform: translateY(0); }
+  16%, 75% { background: #007aff; color: #fff; transform: translateY(2px); }
+  76%, 100% { background: #fff; color: #1c1c1e; transform: translateY(0); }
+}
+@keyframes peekCursor { 0%, 26% { left: 250px; top: 140px; } 44%, 86% { left: 62px; top: 46px; } 100% { left: 250px; top: 140px; } }
+@keyframes peekRing { 0%, 46% { opacity: 0; transform: scale(.6); } 49% { opacity: 1; transform: scale(1); } 56%, 100% { opacity: 0; transform: scale(1.4); } }
+@keyframes peekIcon { 0%, 48% { background: transparent; } 50%, 74% { background: rgba(0,122,255,.25); } 76%, 100% { background: transparent; } }
+
+.play.d-man .key { animation: key2x 8s linear infinite; }
+.play.d-man .badge { animation: badge 8s linear infinite; }
+.play.d-man .cursor { animation: manCursor 8s ease-in-out infinite; }
+.play.d-man .m1 { animation: mark1 8s linear infinite; }
+.play.d-man .m2 { animation: mark2 8s linear infinite; }
+.play.d-man .doc { animation: docIn 8s ease-out infinite; }
+@keyframes badge { 0%, 19% { opacity: 0; } 21%, 68% { opacity: 1; } 70%, 100% { opacity: 0; } }
+@keyframes manCursor { 0%, 22% { left: 250px; top: 150px; } 32%, 36% { left: 112px; top: 122px; } 46%, 100% { left: 222px; top: 122px; } }
+@keyframes mark1 { 0%, 35% { opacity: 0; } 37%, 70% { opacity: 1; } 72%, 100% { opacity: 0; } }
+@keyframes mark2 { 0%, 49% { opacity: 0; } 51%, 70% { opacity: 1; } 72%, 100% { opacity: 0; } }
+@keyframes docIn { 0%, 72% { opacity: 0; top: 96px; } 78%, 96% { opacity: 1; top: 70px; } 100% { opacity: 0; top: 70px; } }
+</style>
+</head>
+<body>
+<div class="wrap noanim" id="wrap">
+  <h1>操作性拡張アプリ</h1>
+  <div class="seg" id="seg"><div class="segbtn t1 sel" data-view="feat"><svg width="22" height="14" viewBox="0 0 22 14"><rect x="0.5" y="0.5" width="21" height="13" rx="6.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="15" cy="7" r="4" fill="currentColor"/></svg>機能</div><div class="segbtn t2" data-view="guide"><svg width="22" height="14" viewBox="0 0 22 14"><rect x="0.8" y="0.8" width="20.4" height="12.4" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4" y="4" width="2.4" height="2.2" fill="currentColor"/><rect x="8" y="4" width="2.4" height="2.2" fill="currentColor"/><rect x="12" y="4" width="2.4" height="2.2" fill="currentColor"/><rect x="16" y="4" width="2.4" height="2.2" fill="currentColor"/><rect x="6" y="8.2" width="10" height="2.2" fill="currentColor"/></svg>操作説明</div></div>
+
+  <div id="v-feat">
+  <p class="sub">使いたい機能をオンにしてください。名前を押すと、動きの見本が出ます。</p>
+
+  <div class="list">
+
+    <div class="item" id="i-swap">
+      <div class="row">
+        <div class="main" data-demo="swap">
+          <div class="name">モニター入れ替え</div>
+          <div class="desc">左Ctrlを素早く2回で、左右の画面のウィンドウを入れ替える</div>
+          <div class="more">▶ 動きを見る</div>
+        </div>
+        <div class="sw" data-key="swap" title="オン／オフ"><span class="knob"></span></div>
+      </div>
+      <div class="demo">
+        <div class="stage d-swap" id="st-swap">
+          <div class="mon" style="left:28px; top:18px; width:180px; height:110px;"><div class="scr"></div></div>
+          <div class="mon" style="left:258px; top:18px; width:180px; height:110px;"><div class="scr"></div></div>
+          <div class="mlabel" style="left:28px; top:136px; width:190px;">左の画面</div>
+          <div class="mlabel" style="left:258px; top:136px; width:190px;">右の画面</div>
+          <div class="win blue w1" style="left:38px; top:34px; width:150px; height:80px;"><div class="bar"></div><div class="t">Excel</div></div>
+          <div class="win green w2" style="left:268px; top:34px; width:150px; height:80px;"><div class="bar"></div><div class="t">メール</div></div>
+          <div class="key" style="left:196px; top:162px;">左Ctrl</div>
+          <div class="klabel" style="left:270px; top:167px;">← 素早く2回</div>
+        </div>
+        <p class="cap"><b>左Ctrlを素早く2回</b>押すと、左右の画面のウィンドウが全部入れ替わります。最大化しているウィンドウも、そのまま反対の画面で最大化されます。</p>
+      </div>
+    </div>
+
+    <div class="item" id="i-shot">
+      <div class="row">
+        <div class="main" data-demo="shot">
+          <div class="name">ウィンドウだけスクショ</div>
+          <div class="desc">PrintScreenで、今のウィンドウだけをデスクトップの「スクショ」に保存</div>
+          <div class="more">▶ 動きを見る</div>
+        </div>
+        <div class="sw" data-key="shot" title="オン／オフ"><span class="knob"></span></div>
+      </div>
+      <div class="demo">
+        <div class="stage d-shot" id="st-shot">
+          <div class="mon" style="left:20px; top:14px; width:260px; height:150px;"><div class="scr"></div></div>
+          <div class="win gray" style="left:36px; top:30px; width:146px; height:86px;"><div class="bar"></div><div class="t">メール</div></div>
+          <div class="win blue" style="left:108px; top:58px; width:146px; height:86px;"><div class="bar"></div><div class="t">見積書</div></div>
+          <div class="flash" style="left:108px; top:58px; width:146px; height:86px;"></div>
+          <div class="folder" style="left:350px; top:82px;"><div class="tab"></div><div class="body"></div><div class="fl">スクショ</div></div>
+          <div class="thumb"></div>
+          <div class="toast" style="left:64px; top:142px;">保存しました：2026-11-23_101530.png</div>
+          <div class="key" style="left:300px; top:164px;">PrintScreen</div>
+        </div>
+        <p class="cap"><b>PrintScreenを1回</b>押すと、手前のウィンドウだけを撮って、デスクトップの「スクショ」フォルダに保存します。デスクトップを選んでいるときは2画面まとめて撮ります。</p>
+      </div>
+    </div>
+
+    <div class="item" id="i-peek">
+      <div class="row">
+        <div class="main" data-demo="peek">
+          <div class="name">後ろを触る（透かし）</div>
+          <div class="desc">無変換を押している間だけ、ウィンドウが透けて後ろやデスクトップを触れる</div>
+          <div class="more">▶ 動きを見る</div>
+        </div>
+        <div class="sw" data-key="peek" title="オン／オフ"><span class="knob"></span></div>
+      </div>
+      <div class="demo">
+        <div class="stage d-peek" id="st-peek">
+          <div class="mon" style="left:20px; top:12px; width:300px; height:168px;"><div class="scr"></div></div>
+          <div class="icon hit" style="left:38px; top:24px;"><i class="pdf"></i>見積書</div>
+          <div class="icon" style="left:38px; top:78px;"><i></i>メモ</div>
+          <div class="icon" style="left:38px; top:130px;"><i></i>資料</div>
+          <div class="win gray back" style="left:96px; top:30px; width:190px; height:110px;"><div class="bar"></div><div class="t">後ろのウィンドウ</div></div>
+          <div class="win blue front" style="left:25px; top:17px; width:290px; height:158px;"><div class="bar"></div><div class="t">最大化している画面</div></div>
+          <div class="ring" style="left:62px; top:46px;"></div>
+          <div class="cursor" style="left:250px; top:140px;"><svg width="18" height="24" viewBox="0 0 18 24"><path d="M1 1 L1 19 L6 14 L9 22 L12 21 L9 13 L16 13 Z" fill="#fff" stroke="#1c1c1e" stroke-width="1.5"/></svg></div>
+          <div class="key" style="left:350px; top:70px;">無変換</div>
+          <div class="klabel" style="left:336px; top:102px;">押している間だけ</div>
+        </div>
+        <p class="cap"><b>無変換を押している間だけ</b>、両方の画面のウィンドウが透けます（一番手前はうっすら、後ろは完全に透明）。そのままデスクトップや後ろのウィンドウをクリックできます。離すと元に戻ります。</p>
+      </div>
+    </div>
+
+    <div class="item" id="i-man">
+      <div class="row">
+        <div class="main" data-demo="man">
+          <div class="name">操作マニュアル自動作成</div>
+          <div class="desc">右Ctrl（または右Alt）を2回で記録開始。もう一度2回で手順書ができる</div>
+          <div class="more">▶ 動きを見る</div>
+        </div>
+        <div class="sw" data-key="manual" title="オン／オフ"><span class="knob"></span></div>
+      </div>
+      <div class="demo">
+        <div class="stage d-man" id="st-man">
+          <div class="mon" style="left:20px; top:14px; width:300px; height:166px;"><div class="scr"></div></div>
+          <div class="badge" style="left:236px; top:24px;">● 記録中</div>
+          <div class="win blue" style="left:60px; top:46px; width:220px; height:110px;"><div class="bar"></div><div class="t">設定の画面</div>
+            <div class="btn" style="left:24px; top:66px;">はい</div>
+            <div class="btn" style="left:134px; top:66px;">次へ</div>
+          </div>
+          <div class="mark m1" style="left:112px; top:123px;"><span>1</span></div>
+          <div class="mark m2" style="left:222px; top:123px;"><span>2</span></div>
+          <div class="cursor" style="left:250px; top:140px;"><svg width="18" height="24" viewBox="0 0 18 24"><path d="M1 1 L1 19 L6 14 L9 22 L12 21 L9 13 L16 13 Z" fill="#fff" stroke="#1c1c1e" stroke-width="1.5"/></svg></div>
+          <div class="key" style="left:344px; top:22px;">右Ctrl</div>
+          <div class="klabel" style="left:340px; top:52px;">素早く2回</div>
+          <div class="doc" style="left:338px; top:70px; width:96px; height:104px;">
+            <div class="dt">手順書</div>
+            <div class="ln" style="width:70%;"></div>
+            <div class="pic"><b></b></div>
+            <div class="ln" style="width:85%;"></div>
+            <div class="pic"><b style="left:50px;"></b></div>
+          </div>
+        </div>
+        <p class="cap"><b>右Ctrl（または右Alt）を素早く2回</b>で記録が始まり、右上に「● 記録中」が出ます。ふだん通りに操作して、もう一度2回押すと、クリックした所に赤丸を付けた写真入りの手順書ができて開きます。保存先はデスクトップの「自動マニュアル作成」です。</p>
+      </div>
+    </div>
+
+  </div>
+
+  </div>
+
+  <div id="v-guide" style="display:none;">
+    <p class="sub" id="guide-sub">オンにしている機能のキーと使い方です。</p>
+    <div class="board" id="board"></div>
+  </div>
+  <p class="ver">版 __VERSION__</p>
+  <input type="hidden" id="state" value="__STATE__">
+</div>
+
+<script>
+(function () {
+  var NAMES = { swap: 'モニター入れ替え', shot: 'ウィンドウだけスクショ', peek: '後ろを触る（透かし）', manual: '操作マニュアル自動作成' };
+  var HOW = { swap: '左Ctrlを素早く2回押すと使えます。', shot: 'PrintScreenを押すと使えます。', peek: '無変換を押している間だけ使えます。', manual: '右Ctrl（または右Alt）を素早く2回で記録が始まります。' };
+  var ORDER = ['swap', 'shot', 'peek', 'manual'];
+  var stateEl = document.getElementById('state');
+  var state = {};
+
+  function hasClass(el, c) { return (' ' + el.className + ' ').indexOf(' ' + c + ' ') >= 0; }
+  function addClass(el, c) { if (!hasClass(el, c)) { el.className = (el.className + ' ' + c).replace(/^\s+/, ''); } }
+  function removeClass(el, c) { el.className = (' ' + el.className + ' ').replace(' ' + c + ' ', ' ').replace(/^\s+|\s+$/g, ''); }
+
+  function readState() {
+    var v = stateEl.value || '';
+    var parts = v.split(';');
+    for (var i = 0; i < ORDER.length; i++) { state[ORDER[i]] = false; }
+    for (var j = 0; j < parts.length; j++) {
+      var kv = parts[j].split('=');
+      if (kv.length === 2 && state.hasOwnProperty(kv[0])) { state[kv[0]] = (kv[1] === '1'); }
+    }
+  }
+  function writeState() {
+    var out = [];
+    for (var i = 0; i < ORDER.length; i++) { out.push(ORDER[i] + '=' + (state[ORDER[i]] ? '1' : '0')); }
+    stateEl.value = out.join(';');
+  }
+  function paint(btn, on) {
+    if (on) { addClass(btn, 'on'); } else { removeClass(btn, 'on'); }
+    btn.setAttribute('aria-checked', on ? 'true' : 'false');
+  }
+
+  var switches = document.getElementsByTagName('div');
+  readState();
+  for (var i = 0; i < switches.length; i++) {
+    var b = switches[i];
+    if (!hasClass(b, 'sw')) { continue; }
+    b.setAttribute('role', 'switch');
+    paint(b, !!state[b.getAttribute('data-key')]);
+    b.onclick = function (e) {
+      e = e || window.event;
+      if (e.stopPropagation) { e.stopPropagation(); }
+      var key = this.getAttribute('data-key');
+      state[key] = !state[key];
+      paint(this, state[key]);
+      writeState();
+    };
+  }
+  setTimeout(function () { removeClass(document.getElementById('wrap'), 'noanim'); }, 50);
+
+  // ---------- タブ（機能／操作説明） ----------
+  var segBtns = document.getElementById('seg').getElementsByTagName('div');
+  for (var sb = 0; sb < segBtns.length; sb++) {
+    segBtns[sb].onclick = function () {
+      for (var q = 0; q < segBtns.length; q++) { removeClass(segBtns[q], 'sel'); }
+      addClass(this, 'sel');
+      var v = this.getAttribute('data-view');
+      document.getElementById('v-feat').style.display = v === 'feat' ? 'block' : 'none';
+      document.getElementById('v-guide').style.display = v === 'guide' ? 'block' : 'none';
+      if (v === 'guide') { drawGuide(); }
+      if (v === 'feat') { closeAll(null); }
+    };
+  }
+
+  // ---------- 操作説明：キーボードの絵と、オンの機能への線 ----------
+  var U = 30, KX = 17, FY = 70, MY = 102;
+  // 各行： [表示, 幅（キー何個分）, 名前]。名前のあるキーに線を引く
+  var ROWS = [
+    [['Esc', 1], ['', 0.4, 'gap'], ['F1', 1], ['F2', 1], ['F3', 1], ['F4', 1], ['', 0.2, 'gap'], ['F5', 1], ['F6', 1], ['F7', 1], ['F8', 1], ['', 0.2, 'gap'], ['F9', 1], ['F10', 1], ['F11', 1], ['F12', 1], ['', 0.2, 'gap'], ['PrtSc', 1, 'prtsc']],
+    [['半/全', 1], ['1', 1], ['2', 1], ['3', 1], ['4', 1], ['5', 1], ['6', 1], ['7', 1], ['8', 1], ['9', 1], ['0', 1], ['-', 1], ['^', 1], ['¥', 1], ['BS', 1]],
+    [['Tab', 1.5], ['Q', 1], ['W', 1], ['E', 1], ['R', 1], ['T', 1], ['Y', 1], ['U', 1], ['I', 1], ['O', 1], ['P', 1], ['@', 1], ['[', 1], ['Enter', 1.5]],
+    [['Caps', 1.75], ['A', 1], ['S', 1], ['D', 1], ['F', 1], ['G', 1], ['H', 1], ['J', 1], ['K', 1], ['L', 1], [';', 1], [':', 1], [']', 1], ['', 1.25]],
+    [['Shift', 2.25], ['Z', 1], ['X', 1], ['C', 1], ['V', 1], ['B', 1], ['N', 1], ['M', 1], [',', 1], ['.', 1], ['/', 1], ['\\', 1], ['Shift', 1.75]],
+    [['Ctrl', 1.5, 'lctrl'], ['Win', 1.25], ['Alt', 1.25], ['無変換', 1.25, 'muhen'], ['', 3.5], ['変換', 1.25], ['かな', 1.25], ['Alt', 1.25, 'ralt'], ['Menu', 1.25], ['Ctrl', 1.25, 'rctrl']]
+  ];
+  var GUIDE = [
+    { key: 'swap', keys: ['lctrl'], color: '#007aff', title: 'モニター入れ替え', how: '左Ctrl を素早く2回', at: 'b', slot: 0, anim: 'x2' },
+    { key: 'peek', keys: ['muhen'], color: '#af52de', title: '後ろを触る（透かし）', how: '無変換を押している間', at: 'b', slot: 1, anim: 'hold' },
+    { key: 'manual', keys: ['ralt', 'rctrl'], color: '#ff3b30', title: 'マニュアル自動作成', how: '右Alt か 右Ctrl を素早く2回', at: 'b', slot: 2, anim: 'x2' },
+    { key: 'shot', keys: ['prtsc'], color: '#ff9500', title: 'ウィンドウだけスクショ', how: 'PrintScreen を1回', at: 't', slot: 0, anim: '' }
+  ];
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  var drawTimers = [];
+
+  function drawGuide() {
+    var board = document.getElementById('board');
+    for (var dt = 0; dt < drawTimers.length; dt++) { clearInterval(drawTimers[dt]); clearTimeout(drawTimers[dt]); }
+    drawTimers = [];
+    board.innerHTML = '';
+    var keyPos = {};
+    for (var r = 0; r < ROWS.length; r++) {
+      var x = 0;
+      for (var c = 0; c < ROWS[r].length; c++) {
+        var kd = ROWS[r][c];
+        if (kd[2] !== 'gap') {
+          var el = document.createElement('div');
+          el.className = r === 0 ? 'k fn' : 'k';
+          el.style.left = (KX + x * U + 1) + 'px';
+          el.style.top = (r === 0 ? FY : MY + (r - 1) * U) + 'px';
+          el.style.width = (kd[1] * U - 4) + 'px';
+          el.appendChild(document.createTextNode(kd[0]));
+          board.appendChild(el);
+          if (kd[2]) {
+            var top = r === 0 ? FY : MY + (r - 1) * U;
+            keyPos[kd[2]] = { el: el, cx: KX + (x + kd[1] / 2) * U, top: top, bottom: top + (r === 0 ? 23 : 29) };
+          }
+        }
+        x += kd[1];
+      }
+    }
+    var svg = document.createElementNS(SVGNS, 'svg');
+    svg.setAttribute('class', 'lines');
+    svg.setAttribute('width', '484');
+    svg.setAttribute('height', '362');
+    board.appendChild(svg);
+
+    var any = false, order = 0;
+    for (var g = 0; g < GUIDE.length; g++) {
+      var f = GUIDE[g];
+      if (!state[f.key]) { continue; }
+      any = true;
+      var call = document.createElement('div');
+      call.className = 'call';
+      call.style.borderColor = f.color;
+      var cw, cl, ct;
+      if (f.at === 'b') { cw = 146; cl = 8 + f.slot * 161; ct = 284; }
+      else { cw = 176; cl = 292; ct = 12; }
+      call.style.left = cl + 'px';
+      call.style.top = ct + 'px';
+      call.style.width = (cw - 20) + 'px';
+      var tt = document.createElement('div'); tt.className = 'ct'; tt.style.color = f.color; tt.appendChild(document.createTextNode(f.title));
+      var hh = document.createElement('div'); hh.className = 'ch'; hh.appendChild(document.createTextNode(f.how));
+      call.appendChild(tt); call.appendChild(hh);
+      board.appendChild(call);
+      var ccx = cl + cw / 2;
+      for (var kk = 0; kk < f.keys.length; kk++) {
+        var kp = keyPos[f.keys[kk]];
+        kp.el.style.background = f.color;
+        kp.el.className += ' hot';
+        var pts;
+        if (f.at === 'b') {
+          var mid = 268;
+          pts = [[kp.cx, kp.bottom], [kp.cx, mid], [ccx, mid], [ccx, ct]];
+        } else {
+          var midT = ct + 52;
+          pts = [[kp.cx, kp.top], [kp.cx, midT], [ccx, midT], [ccx, ct + 45]];
+        }
+        drawLine(svg, pts, f.color, order * 180, call);
+      }
+      order++;
+    }
+    document.getElementById('guide-sub').innerHTML = '';
+    document.getElementById('guide-sub').appendChild(document.createTextNode(any ? 'オンにしている機能のキーと使い方です。' : 'まだオンの機能がありません。「機能」でオンにすると、ここにキーと使い方が出ます。'));
+  }
+
+  // 線を「ピッ」と引く（キーから説明へ）
+  function drawLine(svg, pts, color, delay, call) {
+    var len = 0, s = '';
+    for (var i = 0; i < pts.length; i++) {
+      s += (i ? ' ' : '') + pts[i][0] + ',' + pts[i][1];
+      if (i) { len += Math.abs(pts[i][0] - pts[i - 1][0]) + Math.abs(pts[i][1] - pts[i - 1][1]); }
+    }
+    var pl = document.createElementNS(SVGNS, 'polyline');
+    pl.setAttribute('points', s);
+    pl.setAttribute('fill', 'none');
+    pl.setAttribute('stroke', color);
+    pl.setAttribute('stroke-width', '2');
+    pl.setAttribute('stroke-dasharray', len + ' ' + len);
+    pl.setAttribute('stroke-dashoffset', String(len));
+    svg.appendChild(pl);
+    var dot = document.createElementNS(SVGNS, 'circle');
+    dot.setAttribute('cx', pts[0][0]); dot.setAttribute('cy', pts[0][1]); dot.setAttribute('r', '3'); dot.setAttribute('fill', color);
+    svg.appendChild(dot);
+    var t0 = setTimeout(function () {
+      var step = 0, steps = 14;
+      var iv = setInterval(function () {
+        step++;
+        pl.setAttribute('stroke-dashoffset', String(Math.max(0, len * (1 - step / steps))));
+        if (step >= steps) { clearInterval(iv); addClass(call, 'show'); }
+      }, 18);
+      drawTimers.push(iv);
+    }, delay);
+    drawTimers.push(t0);
+  }
+
+  // 本体（自作版）がスイッチの状態を読みに来る
+  window.getState = function () { return stateEl.value; };
+
+  var mains = document.getElementsByTagName('div');
+  var items = [];
+  for (var k = 0; k < mains.length; k++) {
+    if (hasClass(mains[k], 'item')) { items.push(mains[k]); }
+  }
+  function closeAll(except) {
+    for (var n = 0; n < items.length; n++) {
+      if (items[n] !== except) {
+        removeClass(items[n], 'open');
+        setMore(items[n], false);
+        var st = findStage(items[n]);
+        if (st) { removeClass(st, 'play'); }
+      }
+    }
+  }
+  function findStage(item) {
+    var ds = item.getElementsByTagName('div');
+    for (var n = 0; n < ds.length; n++) { if (hasClass(ds[n], 'stage')) { return ds[n]; } }
+    return null;
+  }
+  function setMore(item, open) {
+    var ds = item.getElementsByTagName('div');
+    for (var n = 0; n < ds.length; n++) {
+      if (hasClass(ds[n], 'more')) { ds[n].innerHTML = ''; ds[n].appendChild(document.createTextNode(open ? '▼ 閉じる' : '▶ 動きを見る')); }
+    }
+  }
+  for (var m = 0; m < items.length; m++) {
+    var ds = items[m].getElementsByTagName('div');
+    for (var n = 0; n < ds.length; n++) {
+      if (!hasClass(ds[n], 'main')) { continue; }
+      ds[n].onclick = (function (item) {
+        return function () {
+          var st = findStage(item);
+          if (hasClass(item, 'open')) {
+            removeClass(item, 'open');
+            setMore(item, false);
+            if (st) { removeClass(st, 'play'); }
+            return;
+          }
+          closeAll(item);
+          addClass(item, 'open');
+          setMore(item, true);
+          if (st) {
+            removeClass(st, 'play');
+            void st.offsetWidth;
+            addClass(st, 'play');
+          }
+          if (item.scrollIntoView) { item.scrollIntoView(false); }
+        };
+      })(items[m]);
+    }
+  }
+})();
+</script>
+</body>
+</html>

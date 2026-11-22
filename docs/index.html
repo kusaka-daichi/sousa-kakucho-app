@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>操作性拡張アプリ</title>
+<link rel="icon" href="icon.png">
+<style>
+:root { --ink: #1c1c1e; --muted: #6e6e73; --line: #e5e5ea; --bg: #f2f2f7; --green: #34c759; --navy: #1f3a68; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Yu Gothic UI", "Meiryo UI", "Hiragino Sans", sans-serif; font-size: 15.5px; line-height: 1.75; }
+main { max-width: 760px; margin: 0 auto; padding: 40px 20px 60px; }
+.hero { display: flex; align-items: center; gap: 18px; }
+.hero img { width: 72px; height: 72px; }
+h1 { margin: 0; font-size: 30px; letter-spacing: .02em; }
+.lead { margin: 4px 0 0; color: var(--muted); }
+.dl { display: inline-block; margin: 28px 0 6px; padding: 14px 30px; background: var(--green); color: #fff; font-size: 18px; font-weight: bold; text-decoration: none; border-radius: 12px; }
+.dl:hover { filter: brightness(.95); }
+.small { font-size: 13px; color: var(--muted); }
+.card { background: #fff; border-radius: 14px; padding: 20px 24px; margin-top: 22px; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+h2 { margin: 0 0 10px; font-size: 18px; color: var(--navy); }
+.feat { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.feat div { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.feat b { display: block; }
+.feat span { font-size: 13.5px; color: var(--muted); }
+ol { margin: 0; padding-left: 1.4em; }
+li { margin: 4px 0; }
+kbd { font-family: inherit; font-size: .88em; background: #f2f2f7; border: 1px solid #d1d1d6; border-bottom-width: 2px; border-radius: 5px; padding: 0 .4em; }
+.note { margin-top: 10px; background: #fff8e6; border-left: 4px solid #ffb300; padding: 8px 12px; font-size: 14px; }
+footer { margin-top: 30px; font-size: 13px; color: var(--muted); }
+footer a { color: var(--muted); }
+@media (max-width: 600px) { .feat { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="hero">
+    <img src="icon.png" alt="">
+    <div>
+      <h1>操作性拡張アプリ</h1>
+      <p class="lead">Windows のパソコン操作を少し楽にする、小さなアプリ。使いたい機能だけをスイッチでオンにして使います。</p>
+    </div>
+  </div>
+
+  <a class="dl" href="https://github.com/kusaka-daichi/sousa-kakucho-app/releases/latest/download/sousa-kakucho-app.zip">ダウンロード（無料）</a>
+  <div class="small">Windows 10 / 11 用　・　新しい版が出たら自動で更新されます</div>
+
+  <div class="card">
+    <h2>できること</h2>
+    <div class="feat">
+      <div><b>モニター入れ替え</b><span><kbd>左Ctrl</kbd> を素早く2回で、左右の画面のウィンドウを入れ替え</span></div>
+      <div><b>ウィンドウだけスクショ</b><span><kbd>PrintScreen</kbd> で、手前のウィンドウだけを保存</span></div>
+      <div><b>後ろを触る（透かし）</b><span><kbd>無変換</kbd> を押している間だけ、ウィンドウが透けて後ろを触れる</span></div>
+      <div><b>操作マニュアル自動作成</b><span><kbd>右Ctrl</kbd>（または <kbd>右Alt</kbd>）を2回で記録。写真入りの手順書ができる</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>入れ方</h2>
+    <ol>
+      <li>上の「ダウンロード」を押す</li>
+      <li>ダウンロードした <b>sousa-kakucho-app.zip</b> を右クリック →「すべて展開」</li>
+      <li>できたフォルダの中の <b>インストール</b> をダブルクリック</li>
+      <li>アプリの画面が開いたら、使いたい機能をオンにする。次からはデスクトップの「操作性拡張アプリ」から開けます</li>
+    </ol>
+    <div class="note">「Windows によって PC が保護されました」と出ることがあります。会社のパソコンでは、入れてよいか先に確認してください。</div>
+  </div>
+
+  <div class="card">
+    <h2>安心して使うために</h2>
+    <ol>
+      <li>Windows に最初から入っている部品だけで動きます。ほかのソフトを入れる必要はありません</li>
+      <li>キーやマウスの操作は、機能を動かすためだけに使い、外には送りません。インターネットにつなぐのは、新しい版が出ていないかを GitHub に見に行くときだけです</li>
+      <li>中身はすべて公開しています。誰でも確かめられます</li>
+    </ol>
+  </div>
+
+  <footer>
+    <a href="https://github.com/kusaka-daichi/sousa-kakucho-app">中身（GitHub）</a>　・
+    <a href="https://github.com/kusaka-daichi/sousa-kakucho-app/releases">これまでの版</a>
+  </footer>
+</main>
+</body>
+</html>
