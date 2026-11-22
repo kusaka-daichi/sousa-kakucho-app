@@ -2147,6 +2147,31 @@ document.getElementById(""save"").addEventListener(""click"",async function(){
                 if (File.Exists(sig2)) { File.Delete(sig2); Shot.Run(); }
                 string sig3 = Path.Combine(Program.SysDir, "試し_更新確認.txt");
                 if (File.Exists(sig3)) { File.Delete(sig3); Online.CheckNow(true); }
+                // アプリ画面を開いて撮る（手順書づくり用）：置き場に「画面撮影.png」を作る
+                string sig5 = Path.Combine(Program.SysDir, "試し_画面撮影.txt");
+                if (File.Exists(sig5))
+                {
+                    File.Delete(sig5);
+                    Host.I.OpenSettings();
+                    System.Windows.Forms.Timer tm = new System.Windows.Forms.Timer();
+                    tm.Interval = 1500;
+                    tm.Tick += delegate
+                    {
+                        tm.Stop(); tm.Dispose();
+                        try
+                        {
+                            Form f = Host.I.Settings;
+                            f.TopMost = true;
+                            W.PerMonitorDpi();
+                            W.RECT fr = W.FrameRect(f.Handle);
+                            using (Bitmap b = Shot.Capture(Rectangle.FromLTRB(fr.Left, fr.Top, fr.Right, fr.Bottom)))
+                                b.Save(Path.Combine(Program.SysDir, "画面撮影.png"), ImageFormat.Png);
+                            f.TopMost = false;
+                        }
+                        catch (Exception e) { Program.Log("画面撮影: " + e.Message); }
+                    };
+                    tm.Start();
+                }
                 // 引っ越し：「試し_引っ越し.txt」に新しい置き場（app.ps1 などを入れたフォルダ）が書いてあれば、そこから起動し直す
                 string sig4 = Path.Combine(Program.SysDir, "試し_引っ越し.txt");
                 if (File.Exists(sig4))
