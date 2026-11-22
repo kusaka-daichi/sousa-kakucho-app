@@ -84,6 +84,10 @@ h1 { margin: 0; font-size: 22px; font-weight: bold; letter-spacing: .02em; }
 .call .ct { font-size: 12.5px; font-weight: bold; line-height: 1.4; }
 .call .ch { font-size: 11.5px; color: #3a3a3c; line-height: 1.4; }
 .lines { position: absolute; left: 0; top: 0; }
+.top { position: relative; }
+.share { position: absolute; right: 0; top: 1px; height: 28px; line-height: 26px; padding: 0 12px 0 10px; font-size: 13px; font-weight: bold; color: #007aff; background: #fff; border: 1px solid #c7c7cc; border-radius: 14px; cursor: pointer; white-space: nowrap; }
+.share:hover { background: #eaf3ff; border-color: #007aff; }
+.share svg { vertical-align: middle; margin: -3px 5px 0 0; }
 .ver { margin: 14px 4px 0; font-size: 11px; color: #aeaeb2; text-align: right; }
 .empty { position: absolute; left: 20px; right: 20px; top: 286px; text-align: center; color: #8e8e93; font-size: 13px; }
 
@@ -154,7 +158,7 @@ h1 { margin: 0; font-size: 22px; font-weight: bold; letter-spacing: .02em; }
 </head>
 <body>
 <div class="wrap noanim" id="wrap">
-  <h1>操作性改善アプリ</h1>
+  <div class="top"><h1>操作性改善アプリ</h1><div class="share" id="share"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M5.5 2.5H2.5v9h9v-3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 1.5h4.5V6M12.5 1.5L6.5 7.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>共有ページを開く</div></div>
   <div class="seg" id="seg"><div class="segbtn t1 sel" data-view="feat"><svg width="22" height="14" viewBox="0 0 22 14"><rect x="0.5" y="0.5" width="21" height="13" rx="6.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="15" cy="7" r="4" fill="currentColor"/></svg>機能</div><div class="segbtn t2" data-view="guide"><svg width="22" height="14" viewBox="0 0 22 14"><rect x="0.8" y="0.8" width="20.4" height="12.4" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4" y="4" width="2.4" height="2.2" fill="currentColor"/><rect x="8" y="4" width="2.4" height="2.2" fill="currentColor"/><rect x="12" y="4" width="2.4" height="2.2" fill="currentColor"/><rect x="16" y="4" width="2.4" height="2.2" fill="currentColor"/><rect x="6" y="8.2" width="10" height="2.2" fill="currentColor"/></svg>操作説明</div></div>
 
   <div id="v-feat">
@@ -468,6 +472,11 @@ h1 { margin: 0; font-size: 22px; font-weight: bold; letter-spacing: .02em; }
 
   // 本体（自作版）がスイッチの状態を読みに来る
   window.getState = function () { return stateEl.value; };
+
+  // 「共有ページを開く」：本体が takeAction() で読み取って、ふだんのブラウザで開く
+  var pendingAct = '';
+  document.getElementById('share').onclick = function () { pendingAct = 'share'; };
+  window.takeAction = function () { var a = pendingAct; pendingAct = ''; return a; };
 
   var mains = document.getElementsByTagName('div');
   var items = [];

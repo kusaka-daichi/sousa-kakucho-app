@@ -2102,6 +2102,12 @@ document.getElementById(""save"").addEventListener(""click"",async function(){
                 if (web.Document == null) return;
                 object r = web.Document.InvokeScript("getState");
                 s = r as string;
+                object act = web.Document.InvokeScript("takeAction");
+                if ((act as string) == "share")
+                {
+                    try { Process.Start(Online.SharePage); }
+                    catch (Exception e) { Program.Log("共有ページ: " + e.Message); }
+                }
             }
             catch { return; }
             if (string.IsNullOrEmpty(s) || s == last || s == "__STATE__") return;
@@ -2247,6 +2253,7 @@ document.getElementById(""save"").addEventListener(""click"",async function(){
     public static class Online
     {
         const string Repo = "kusaka-daichi/sousa-kakucho-app";
+        public const string SharePage = "https://kusaka-daichi.github.io/sousa-kakucho-app/";
         const string Branch = "stable";      // 配る用の版。作業中の版（main）は配られない
         static readonly string[] Files = new string[] { "app.html", "app.ico", "app.ps1", "version.txt", "app.cs" };   // app.cs は最後
         static System.Windows.Forms.Timer timer;
