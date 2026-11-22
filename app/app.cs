@@ -2103,6 +2103,15 @@ document.getElementById(""save"").addEventListener(""click"",async function(){
                 if (File.Exists(sig2)) { File.Delete(sig2); Shot.Run(); }
                 string sig3 = Path.Combine(Program.SysDir, "試し_更新確認.txt");
                 if (File.Exists(sig3)) { File.Delete(sig3); Online.CheckNow(true); }
+                // 引っ越し：「試し_引っ越し.txt」に新しい置き場（app.ps1 などを入れたフォルダ）が書いてあれば、そこから起動し直す
+                string sig4 = Path.Combine(Program.SysDir, "試し_引っ越し.txt");
+                if (File.Exists(sig4))
+                {
+                    string to = File.ReadAllText(sig4, Encoding.UTF8).Trim();
+                    File.Delete(sig4);
+                    MoveTo(to);
+                    return;
+                }
             }
             catch (Exception e) { Program.Log("試し入れ替え: " + e.Message); }
 
@@ -2141,6 +2150,26 @@ document.getElementById(""save"").addEventListener(""click"",async function(){
                 Application.Exit();
             }
             catch (Exception e) { Program.Log("入れ替え: " + e.Message); }
+        }
+
+        // 別のフォルダに置いた同じアプリへ切り替える（ショートカットは新しい方が起動したときに作り直す）
+        static void MoveTo(string to)
+        {
+            if (to == "" || !File.Exists(Path.Combine(to, "app.ps1")) || !File.Exists(Path.Combine(to, "app.cs")))
+            { Program.Log("引っ越し先に app.ps1・app.cs がありません: " + to); return; }
+            if (string.Equals(Path.GetFullPath(to).TrimEnd('\\'), Path.GetFullPath(Program.SysDir).TrimEnd('\\'), StringComparison.OrdinalIgnoreCase)) return;
+            string err = TryCompile(Path.Combine(to, "app.cs"));
+            if (err != null) { Program.Log("引っ越し先の app.cs を組み立てられません:\r\n" + err); return; }
+            bool open = Host.I.Settings != null && !Host.I.Settings.IsDisposed && Host.I.Settings.Visible;
+            Settings.Write("app", "reopen", open ? "1" : "0");
+            Program.Log("引っ越します: " + to);
+            ProcessStartInfo psi = new ProcessStartInfo(Program.PowerShellExe,
+                "-NoProfile -ExecutionPolicy Bypass -STA -WindowStyle Hidden -File \"" + Path.Combine(to, "app.ps1") + "\" /restart");
+            psi.UseShellExecute = false;
+            psi.CreateNoWindow = true;
+            psi.WorkingDirectory = to;
+            Process.Start(psi);
+            Application.Exit();
         }
 
         // 新しい app.cs が組み立てられるか確かめる（PowerShell の Add-Type と同じ部品を使う）
