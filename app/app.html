@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<title>操作性拡張アプリ</title>
+<title>操作性改善アプリ</title>
 <style>
 html, body { margin: 0; padding: 0; }
 body { background: #f2f2f7; color: #1c1c1e; font-family: "Yu Gothic UI", "Meiryo UI", "Meiryo", sans-serif; font-size: 14px; line-height: 1.6; overflow-x: hidden; -ms-user-select: none; user-select: none; cursor: default; }
@@ -154,7 +154,7 @@ h1 { margin: 0; font-size: 22px; font-weight: bold; letter-spacing: .02em; }
 </head>
 <body>
 <div class="wrap noanim" id="wrap">
-  <h1>操作性拡張アプリ</h1>
+  <h1>操作性改善アプリ</h1>
   <div class="seg" id="seg"><div class="segbtn t1 sel" data-view="feat"><svg width="22" height="14" viewBox="0 0 22 14"><rect x="0.5" y="0.5" width="21" height="13" rx="6.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="15" cy="7" r="4" fill="currentColor"/></svg>機能</div><div class="segbtn t2" data-view="guide"><svg width="22" height="14" viewBox="0 0 22 14"><rect x="0.8" y="0.8" width="20.4" height="12.4" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4" y="4" width="2.4" height="2.2" fill="currentColor"/><rect x="8" y="4" width="2.4" height="2.2" fill="currentColor"/><rect x="12" y="4" width="2.4" height="2.2" fill="currentColor"/><rect x="16" y="4" width="2.4" height="2.2" fill="currentColor"/><rect x="6" y="8.2" width="10" height="2.2" fill="currentColor"/></svg>操作説明</div></div>
 
   <div id="v-feat">
@@ -189,8 +189,8 @@ h1 { margin: 0; font-size: 22px; font-weight: bold; letter-spacing: .02em; }
     <div class="item" id="i-shot">
       <div class="row">
         <div class="main" data-demo="shot">
-          <div class="name">ウィンドウだけスクショ</div>
-          <div class="desc">PrintScreenで、今のウィンドウだけをデスクトップの「スクショ」に保存</div>
+          <div class="name">かんたんスクショ</div>
+          <div class="desc">PrintScreenを押すだけで、直感的にスクショ。デスクトップの「スクショ」に保存</div>
           <div class="more">▶ 動きを見る</div>
         </div>
         <div class="sw" data-key="shot" title="オン／オフ"><span class="knob"></span></div>
@@ -284,7 +284,7 @@ h1 { margin: 0; font-size: 22px; font-weight: bold; letter-spacing: .02em; }
 
 <script>
 (function () {
-  var NAMES = { swap: 'モニター入れ替え', shot: 'ウィンドウだけスクショ', peek: '後ろを触る（透かし）', manual: '操作マニュアル自動作成' };
+  var NAMES = { swap: 'モニター入れ替え', shot: 'かんたんスクショ', peek: '後ろを触る（透かし）', manual: '操作マニュアル自動作成' };
   var HOW = { swap: '左Ctrlを素早く2回押すと使えます。', shot: 'PrintScreenを押すと使えます。', peek: '無変換を押している間だけ使えます。', manual: '右Ctrl（または右Alt）を素早く2回で記録が始まります。' };
   var ORDER = ['swap', 'shot', 'peek', 'manual'];
   var stateEl = document.getElementById('state');
@@ -360,7 +360,7 @@ h1 { margin: 0; font-size: 22px; font-weight: bold; letter-spacing: .02em; }
     { key: 'swap', keys: ['lctrl'], color: '#007aff', title: 'モニター入れ替え', how: '左Ctrl を素早く2回', at: 'b', slot: 0, anim: 'x2' },
     { key: 'peek', keys: ['muhen'], color: '#af52de', title: '後ろを触る（透かし）', how: '無変換を押している間', at: 'b', slot: 1, anim: 'hold' },
     { key: 'manual', keys: ['ralt', 'rctrl'], color: '#ff3b30', title: 'マニュアル自動作成', how: '右Alt か 右Ctrl を素早く2回', at: 'b', slot: 2, anim: 'x2' },
-    { key: 'shot', keys: ['prtsc'], color: '#ff9500', title: 'ウィンドウだけスクショ', how: 'PrintScreen を1回', at: 't', slot: 0, anim: '' }
+    { key: 'shot', keys: ['prtsc'], color: '#ff9500', title: 'かんたんスクショ', how: 'PrintScreen を1回', at: 't', slot: 0, anim: '' }
   ];
   var SVGNS = 'http://www.w3.org/2000/svg';
   var drawTimers = [];

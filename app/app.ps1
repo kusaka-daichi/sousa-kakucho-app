@@ -1,4 +1,4 @@
-﻿# 操作性拡張アプリ 起動用（app.cs をその場で組み立てて動かす。exe は作らない）
+﻿# 操作性改善アプリ 起動用（app.cs をその場で組み立てて動かす。exe は作らない）
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Windows.Forms
 $sys = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -10,5 +10,5 @@ try {
 catch {
     $msg = $_.Exception.ToString()
     try { Add-Content -Path (Join-Path $sys "log.txt") -Value ((Get-Date -Format "yyyy-MM-dd HH:mm:ss") + "  起動エラー: " + $msg) -Encoding UTF8 } catch {}
-    [System.Windows.Forms.MessageBox]::Show($msg, "操作性拡張アプリを起動できませんでした") | Out-Null
+    [System.Windows.Forms.MessageBox]::Show($msg, "操作性改善アプリを起動できませんでした") | Out-Null
 }

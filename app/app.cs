@@ -1,4 +1,4 @@
-﻿// 操作性拡張アプリ（自作版。旧名：操作性改善アプリ）
+﻿// 操作性改善アプリ（自作版。一時期の名前：操作性拡張アプリ）
 // ・AutoHotkey を使わず、Windows に最初から入っている部品（PowerShell と .NET）だけで動く
 // ・app.ps1 がこのファイルをその場で組み立てて起動する（exe は作らない）
 // ・機能：1 画面入れ替え／2 スクショ／3 後ろを触る／4 マニュアル作成。アプリ画面のスイッチでオン・オフ（最初は全部オフ）
@@ -339,7 +339,7 @@ namespace SousaKaizen
         public static string SysDir;      // 9_AI作業用
         public static string RootDir;     // 操作性改善アプリ
         static Mutex mutex;
-        public const string AppName = "操作性拡張アプリ";
+        public const string AppName = "操作性改善アプリ";
 
         // app.ps1 から呼ばれる
         public static void Run(string sysDir, string[] args)
@@ -2285,10 +2285,10 @@ document.getElementById(""save"").addEventListener(""click"",async function(){
             if (!File.Exists(desk) || !LinkPointsHere(desk)) MakeLink(desk, Program.PsArgs("/open"));
             // スタートアップ：パソコンを起動したら自動で動く
             if (!File.Exists(startup) || !LinkPointsHere(startup)) MakeLink(startup, Program.PsArgs(""));
-            // 旧名（操作性改善アプリ）のショートカットは片付ける
+            // 一時期の名前（操作性拡張アプリ）のショートカットは片付ける
             foreach (string old in new string[] {
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "操作性改善アプリ.lnk"),
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "操作性改善アプリ.lnk") })
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "操作性拡張アプリ.lnk"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "操作性拡張アプリ.lnk") })
             {
                 try { if (File.Exists(old) && IsOurOrAhkLink(old)) File.Delete(old); } catch { }
             }
