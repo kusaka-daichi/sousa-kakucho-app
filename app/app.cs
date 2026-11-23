@@ -1120,6 +1120,13 @@ namespace SousaKaizen
             bool aL = Math.Abs(fl - s.Left) <= tol, aR = Math.Abs(fr - s.Right) <= tol;
             bool aT = Math.Abs(ft - s.Top) <= tol, aB = Math.Abs(fb - s.Bottom) <= tol;
             int w = size.Width, h = size.Height, x, y;
+            // 上下（左右）両方の端にくっついていた＝縦（横）いっぱいだったものは、移し先でもいっぱいにする
+            // （拡大率に対応しているソフトだけ。対応していないソフトは広げると中が崩れることがあるため）
+            if (it.aware != 0)
+            {
+                if (aL && aR) w = d.Width + e.Left + e.Right;
+                if (aT && aB) h = d.Height + e.Top + e.Bottom;
+            }
             if (aL) x = d.Left - e.Left;
             else if (aR) x = d.Right + e.Right - w;
             else
