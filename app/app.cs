@@ -879,6 +879,7 @@ namespace SousaKaizen
         class Item
         {
             public IntPtr hwnd; public bool max, min, big; public int src, dst; public string proc; public int aware; public string skip;
+            public bool hidden; public int ex; public int? alpha;
             public Rectangle before, target; public Padding edge;
         }
 
@@ -888,6 +889,8 @@ namespace SousaKaizen
         // ・最大化はいったん戻さずに最大化のまま移す。最小化中のものも、戻したときに反対の画面に出るようにしておく
         // ・普通のウィンドウは全部まとめて一度に動かす（1つずつ動いて見えないように）
         // ・拡大率の違う画面へ移ったときの大きさは、ソフトと Windows に任せる（無理に広げると中が灰色になるため）
+        // ・動かしている途中（移す → 拡大率に合わせて大きさが変わる → 収め直す）は見えないように、
+        //   動かすウィンドウをいったん透明にして、仕上がってから元に戻す（一発で移ったように見せる）
         // ・拡大率に対応していないソフト（OMS など）を拡大率の違う画面へ移すと、中が灰色になったり画面からはみ出したりする。
         //   そのため、そういうソフトは「移しても同じ見た目で収まるとき」だけ移し、収まらないときは動かさない
         //   （最大化しているものは、移すと中の大きさが変わって灰色が出るので動かさない）
@@ -960,6 +963,46 @@ namespace SousaKaizen
                 catch { }
             }
 
+            // 0) 動かすウィンドウを、仕上がるまで透明にしておく
+            foreach (Item it in items)
+            {
+                if (it.min || it.skip != null) continue;
+                try
+                {
+                    it.ex = W.GetWindowLong(it.hwnd, W.GWL_EXSTYLE);
+                    it.alpha = W.GetAlpha(it.hwnd);
+                    if ((it.ex & W.WS_EX_LAYERED) != 0 && it.alpha == null) continue;   // 独自の透かし方をしているソフトは触らない
+                    W.SetAlpha(it.hwnd, 0);
+                    it.hidden = true;
+                }
+                catch { }
+            }
+            try
+            {
+                Move(items, mons, full, prim);
+            }
+            finally
+            {
+                // 仕上がったら元の見え方に戻す
+                foreach (Item it in items)
+                {
+                    if (!it.hidden) continue;
+                    try
+                    {
+                        if (it.alpha == null)
+                        {
+                            W.SetAlpha(it.hwnd, 255);
+                            W.SetWindowLong(it.hwnd, W.GWL_EXSTYLE, it.ex);
+                        }
+                        else W.SetAlpha(it.hwnd, it.alpha);
+                    }
+                    catch { }
+                }
+            }
+        }
+
+        static void Move(List<Item> items, List<W.Mon> mons, List<Rectangle> full, W.Mon prim)
+        {
             // 1) 最大化・最小化：画面には出さずに「戻したときの位置」を書き換える
             foreach (Item it in items)
             {
@@ -1091,6 +1134,7 @@ namespace SousaKaizen
             }
             // 調子の悪いソフトを調べるための記録（毎回上書き。ウィンドウの題名は残さない）
             try { File.WriteAllText(Path.Combine(Program.SysDir, "入れ替え記録.txt"), log.ToString(), Encoding.UTF8); } catch { }
+            Thread.Sleep(60);   // 描き直しが終わるのを少し待ってから見せる
         }
 
         static W.WINDOWPLACEMENT Placement(IntPtr hwnd)
