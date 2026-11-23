@@ -936,6 +936,7 @@ namespace SousaKaizen
                     it.src = src - 1;
                     it.dst = (it.src + 1) % mons.Count;
                     it.before = rc;
+                    it.proc = W.ProcessNameOf(hwnd); it.aware = W.Awareness(hwnd);
                     W.Mon sm = mons[it.src], dm = mons[it.dst];
                     if (it.aware == 0 && sm.Dpi != dm.Dpi)
                     {
@@ -954,7 +955,6 @@ namespace SousaKaizen
                         int vw = rc.Width - it.edge.Left - it.edge.Right, vh = rc.Height - it.edge.Top - it.edge.Bottom;
                         it.big = vw >= sw.Width - 16 && vh >= sw.Height - 16;
                     }
-                    it.proc = W.ProcessNameOf(hwnd); it.aware = W.Awareness(hwnd);
                     items.Add(it);
                 }
                 catch { }
