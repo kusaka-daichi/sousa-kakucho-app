@@ -878,7 +878,7 @@ namespace SousaKaizen
         const int SWP_NOSIZE = 0x1, SWP_NOZORDER = 0x4, SWP_NOACTIVATE = 0x10, SWP_ASYNC = 0x4000;
         class Item
         {
-            public IntPtr hwnd; public bool max, min; public int src, dst; public string proc; public int aware;
+            public IntPtr hwnd; public bool max, min, big; public int src, dst; public string proc; public int aware;
             public Rectangle before, target; public Padding edge;
         }
 
@@ -888,6 +888,9 @@ namespace SousaKaizen
         // ・最大化はいったん戻さずに最大化のまま移す。最小化中のものも、戻したときに反対の画面に出るようにしておく
         // ・普通のウィンドウは全部まとめて一度に動かす（1つずつ動いて見えないように）
         // ・拡大率の違う画面へ移ったときの大きさは、ソフトと Windows に任せる（無理に広げると中が灰色になるため）
+        // ・画面いっぱい（またはそれ以上）の大きさの普通のウィンドウは、移した先で最大化する
+        //   （拡大率に対応していないソフトは、移すたびに大きくなって画面からはみ出していくため）
+        // ・移した先で画面より大きくなってしまったものも、最大化して収める
         public static void Run()
         {
             W.PerMonitorDpi();
@@ -932,6 +935,12 @@ namespace SousaKaizen
                     it.src = src - 1;
                     it.dst = (it.src + 1) % mons.Count;
                     it.before = rc;
+                    if (!it.min && !it.max)
+                    {
+                        Rectangle sw = mons[it.src].Work;
+                        int vw = rc.Width - it.edge.Left - it.edge.Right, vh = rc.Height - it.edge.Top - it.edge.Bottom;
+                        it.big = vw >= sw.Width - 16 && vh >= sw.Height - 16;
+                    }
                     it.proc = W.ProcessNameOf(hwnd); it.aware = W.Awareness(hwnd);
                     items.Add(it);
                 }
@@ -954,11 +963,24 @@ namespace SousaKaizen
                 catch { }
             }
 
+            // 1') 画面いっぱいの普通のウィンドウ：移し先の画面に置いてから最大化する
+            foreach (Item it in items)
+            {
+                if (!it.big) continue;
+                try
+                {
+                    Rectangle dw = mons[it.dst].Work;
+                    W.SetWindowPos(it.hwnd, IntPtr.Zero, dw.Left, dw.Top, Math.Min(dw.Width, 800), Math.Min(dw.Height, 600), SWP_NOZORDER | SWP_NOACTIVATE);
+                    W.ShowWindow(it.hwnd, 3);
+                }
+                catch { }
+            }
+
             // 2) 普通のウィンドウ：全部まとめて一度に動かす
             List<Item> normals = new List<Item>();
             foreach (Item it in items)
             {
-                if (it.max || it.min) continue;
+                if (it.max || it.min || it.big) continue;
                 it.target = Target(it, it.before.Size, mons[it.src], mons[it.dst]);
                 normals.Add(it);
             }
@@ -1006,7 +1028,7 @@ namespace SousaKaizen
                     W.RECT r; W.GetWindowRect(it.hwnd, out r);
                     Rectangle now = Rectangle.FromLTRB(r.Left, r.Top, r.Right, r.Bottom);
                     int on = W.MonitorOf(now.Left + now.Width / 2, now.Top + now.Height / 2, full) - 1;
-                    if (it.max)
+                    if (it.max || it.big)
                     {
                         if (on != it.dst || !W.IsZoomed(it.hwnd))
                         {
@@ -1022,6 +1044,7 @@ namespace SousaKaizen
                             W.ShowWindow(it.hwnd, 3);
                             result = "やり直し";
                         }
+                        else if (it.big) result = "画面いっぱいだったので最大化";
                     }
                     else if (!it.min)
                     {
@@ -1031,6 +1054,15 @@ namespace SousaKaizen
                         {
                             W.SetWindowPos(it.hwnd, IntPtr.Zero, fit.Left, fit.Top, fit.Width, fit.Height, SWP_NOZORDER | SWP_NOACTIVATE);
                             result = "画面に収め直した";
+                            // それでも画面より大きいまま（拡大率に対応していないソフト）なら、最大化して収める
+                            Thread.Sleep(60);
+                            W.GetWindowRect(it.hwnd, out r);
+                            Rectangle lim = Grow(d.Work, it.edge);
+                            if (r.Right - r.Left > lim.Width + 8 || r.Bottom - r.Top > lim.Height + 8)
+                            {
+                                W.ShowWindow(it.hwnd, 3);
+                                result = "画面より大きくなったので最大化";
+                            }
                         }
                     }
                     W.GetWindowRect(it.hwnd, out r);
