@@ -878,7 +878,7 @@ namespace SousaKaizen
         const int SWP_NOSIZE = 0x1, SWP_NOZORDER = 0x4, SWP_NOACTIVATE = 0x10, SWP_ASYNC = 0x4000;
         class Item
         {
-            public IntPtr hwnd; public bool max, min, big; public int src, dst; public string proc; public int aware;
+            public IntPtr hwnd; public bool max, min, big; public int src, dst; public string proc; public int aware; public string skip;
             public Rectangle before, target; public Padding edge;
         }
 
@@ -888,9 +888,10 @@ namespace SousaKaizen
         // ・最大化はいったん戻さずに最大化のまま移す。最小化中のものも、戻したときに反対の画面に出るようにしておく
         // ・普通のウィンドウは全部まとめて一度に動かす（1つずつ動いて見えないように）
         // ・拡大率の違う画面へ移ったときの大きさは、ソフトと Windows に任せる（無理に広げると中が灰色になるため）
-        // ・画面いっぱい（またはそれ以上）の大きさの普通のウィンドウは、移した先で最大化する
-        //   （拡大率に対応していないソフトは、移すたびに大きくなって画面からはみ出していくため）
-        // ・移した先で画面より大きくなってしまったものも、最大化して収める
+        // ・拡大率に対応していないソフト（OMS など）を拡大率の違う画面へ移すと、中が灰色になったり画面からはみ出したりする。
+        //   そのため、そういうソフトは「移しても同じ見た目で収まるとき」だけ移し、収まらないときは動かさない
+        //   （最大化しているものは、移すと中の大きさが変わって灰色が出るので動かさない）
+        // ・拡大率に対応しているソフトで、画面いっぱい（またはそれ以上）のものは、移した先で最大化する
         public static void Run()
         {
             W.PerMonitorDpi();
@@ -935,9 +936,21 @@ namespace SousaKaizen
                     it.src = src - 1;
                     it.dst = (it.src + 1) % mons.Count;
                     it.before = rc;
-                    if (!it.min && !it.max)
+                    W.Mon sm = mons[it.src], dm = mons[it.dst];
+                    if (it.aware == 0 && sm.Dpi != dm.Dpi)
                     {
-                        Rectangle sw = mons[it.src].Work;
+                        if (it.max) it.skip = "拡大率に対応していないソフトの最大化なので動かさない";
+                        else if (!it.min)
+                        {
+                            // 移すと Windows が拡大率の比で引き伸ばす。その大きさで収まらなければ動かさない
+                            double k = (double)dm.Dpi / sm.Dpi;
+                            int vw = (int)((rc.Width - it.edge.Left - it.edge.Right) * k), vh = (int)((rc.Height - it.edge.Top - it.edge.Bottom) * k);
+                            if (vw > dm.Work.Width + 4 || vh > dm.Work.Height + 4) it.skip = "移すと画面に収まらないので動かさない";
+                        }
+                    }
+                    else if (!it.min && !it.max)
+                    {
+                        Rectangle sw = sm.Work;
                         int vw = rc.Width - it.edge.Left - it.edge.Right, vh = rc.Height - it.edge.Top - it.edge.Bottom;
                         it.big = vw >= sw.Width - 16 && vh >= sw.Height - 16;
                     }
@@ -950,7 +963,7 @@ namespace SousaKaizen
             // 1) 最大化・最小化：画面には出さずに「戻したときの位置」を書き換える
             foreach (Item it in items)
             {
-                if (!it.max && !it.min) continue;
+                if (it.skip != null || (!it.max && !it.min)) continue;
                 try
                 {
                     W.WINDOWPLACEMENT wp = Placement(it.hwnd);
@@ -966,7 +979,7 @@ namespace SousaKaizen
             // 1') 画面いっぱいの普通のウィンドウ：移し先の画面に置いてから最大化する
             foreach (Item it in items)
             {
-                if (!it.big) continue;
+                if (!it.big || it.skip != null) continue;
                 try
                 {
                     Rectangle dw = mons[it.dst].Work;
@@ -980,7 +993,7 @@ namespace SousaKaizen
             List<Item> normals = new List<Item>();
             foreach (Item it in items)
             {
-                if (it.max || it.min || it.big) continue;
+                if (it.max || it.min || it.big || it.skip != null) continue;
                 it.target = Target(it, it.before.Size, mons[it.src], mons[it.dst]);
                 normals.Add(it);
             }
@@ -1022,6 +1035,11 @@ namespace SousaKaizen
             foreach (Item it in items)
             {
                 string result = "";
+                if (it.skip != null)
+                {
+                    log.AppendLine(it.proc + " 対応" + it.aware + (it.max ? " 最大化" : "") + "  画面" + (it.src + 1) + "  " + it.skip);
+                    continue;
+                }
                 try
                 {
                     W.Mon d = mons[it.dst];
@@ -1054,11 +1072,11 @@ namespace SousaKaizen
                         {
                             W.SetWindowPos(it.hwnd, IntPtr.Zero, fit.Left, fit.Top, fit.Width, fit.Height, SWP_NOZORDER | SWP_NOACTIVATE);
                             result = "画面に収め直した";
-                            // それでも画面より大きいまま（拡大率に対応していないソフト）なら、最大化して収める
+                            // それでも画面より大きいままなら、最大化して収める（拡大率に対応しているソフトだけ）
                             Thread.Sleep(60);
                             W.GetWindowRect(it.hwnd, out r);
                             Rectangle lim = Grow(d.Work, it.edge);
-                            if (r.Right - r.Left > lim.Width + 8 || r.Bottom - r.Top > lim.Height + 8)
+                            if (it.aware != 0 && (r.Right - r.Left > lim.Width + 8 || r.Bottom - r.Top > lim.Height + 8))
                             {
                                 W.ShowWindow(it.hwnd, 3);
                                 result = "画面より大きくなったので最大化";
