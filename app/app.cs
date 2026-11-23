@@ -880,6 +880,7 @@ namespace SousaKaizen
         {
             public IntPtr hwnd; public bool max, min, big; public int src, dst; public string proc; public int aware; public string skip;
             public bool hidden; public int ex; public int? alpha;
+            public bool noSize;   // 拡大率に対応していないソフト：大きさは Windows に任せ、こちらは位置だけ決める
             public Rectangle before, target; public Padding edge;
         }
 
@@ -1037,7 +1038,16 @@ namespace SousaKaizen
             foreach (Item it in items)
             {
                 if (it.max || it.min || it.big || it.skip != null) continue;
-                it.target = Target(it, it.before.Size, mons[it.src], mons[it.dst]);
+                W.Mon sm = mons[it.src], dm = mons[it.dst];
+                Size sz = it.before.Size;
+                if (it.aware == 0 && sm.Dpi != dm.Dpi)
+                {
+                    // 移した先で Windows が拡大率の比で引き伸ばす。その大きさで置き場所を決め、大きさはこちらから変えない
+                    it.noSize = true;
+                    double k = (double)dm.Dpi / sm.Dpi;
+                    sz = new Size((int)Math.Round(sz.Width * k), (int)Math.Round(sz.Height * k));
+                }
+                it.target = Target(it, sz, sm, dm);
                 normals.Add(it);
             }
             bool batched = false;
@@ -1049,7 +1059,7 @@ namespace SousaKaizen
                     foreach (Item it in normals)
                     {
                         if (h == IntPtr.Zero) break;
-                        int f = SWP_NOZORDER | SWP_NOACTIVATE | (it.target.Size == it.before.Size ? SWP_NOSIZE : 0);
+                        int f = SWP_NOZORDER | SWP_NOACTIVATE | (it.noSize || it.target.Size == it.before.Size ? SWP_NOSIZE : 0);
                         h = W.DeferWindowPos(h, it.hwnd, IntPtr.Zero, it.target.Left, it.target.Top, it.target.Width, it.target.Height, f);
                     }
                     if (h != IntPtr.Zero) batched = W.EndDeferWindowPos(h);
@@ -1062,7 +1072,7 @@ namespace SousaKaizen
                     {
                         try
                         {
-                            int f = SWP_NOZORDER | SWP_NOACTIVATE | SWP_ASYNC | (it.target.Size == it.before.Size ? SWP_NOSIZE : 0);
+                            int f = SWP_NOZORDER | SWP_NOACTIVATE | SWP_ASYNC | (it.noSize || it.target.Size == it.before.Size ? SWP_NOSIZE : 0);
                             W.SetWindowPos(it.hwnd, IntPtr.Zero, it.target.Left, it.target.Top, it.target.Width, it.target.Height, f);
                         }
                         catch { }
@@ -1109,6 +1119,27 @@ namespace SousaKaizen
                     }
                     else if (!it.min)
                     {
+                        if (it.noSize)
+                        {
+                            // Windows が大きさを変え終わるのを待ってから、位置だけ合わせる（大きさには触らない＝灰色を出さない）
+                            for (int i = 0; i < 10; i++)
+                            {
+                                if (Math.Abs(now.Width - it.target.Width) <= 12 && Math.Abs(now.Height - it.target.Height) <= 12) break;
+                                Thread.Sleep(50);
+                                W.GetWindowRect(it.hwnd, out r);
+                                now = Rectangle.FromLTRB(r.Left, r.Top, r.Right, r.Bottom);
+                            }
+                            Rectangle pos = Target(it, now.Size, mons[it.src], d);
+                            if (pos.Location != now.Location)
+                            {
+                                W.SetWindowPos(it.hwnd, IntPtr.Zero, pos.Left, pos.Top, 0, 0, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSIZE);
+                                result = "位置だけ合わせた";
+                            }
+                            W.GetWindowRect(it.hwnd, out r);
+                            log.AppendLine(it.proc + " 対応" + it.aware + "  画面" + (it.src + 1) + "→" + (it.dst + 1)
+                                + "  前 " + it.before + " → 後 " + Rectangle.FromLTRB(r.Left, r.Top, r.Right, r.Bottom) + " " + result);
+                            continue;
+                        }
                         // 移した先で大きさが変わったソフトは、その大きさで置き直す（真ん中・くっついている端をそろえる）
                         Rectangle fit = Target(it, now.Size, mons[it.src], d);
                         if (fit != now)
